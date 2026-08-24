@@ -5,8 +5,10 @@ use tauri::{
     Emitter, Manager,
 };
 
-pub mod permissions;
 pub mod background;
+pub mod permissions;
+pub mod secure_dns;
+pub mod tor_support;
 
 #[cfg(any(
     target_os = "linux",
@@ -23,6 +25,10 @@ use webkit2gtk::{
 #[cfg(not(target_os = "android"))]
 fn hide_window(window: &tauri::Window) {
     let _ = window.hide();
+}
+
+async fn secure_dns_watchdog_task(hostname: String) {
+    secure_dns::spawn_dns_watchdog(hostname);
 }
 
 #[cfg(target_os = "android")]
@@ -47,7 +53,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(permissions::init())
-        .plugin(background::init());
+        .plugin(background::init())
+        .plugin(tor_support::init());
 
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let builder = builder
@@ -62,18 +69,30 @@ pub fn run() {
 
     builder
         .setup(|app| {
+            // SECURITY (#4 privacy): DNS watchdog — detect resolver tampering.
+            // The API origin is read from the runtime config env if present.
+            if let Ok(origin) = std::env::var("QXP_SERVER_ORIGIN") {
+                if let Some(hostname) = origin
+                    .strip_prefix("https://")
+                    .or_else(|| origin.strip_prefix("http://"))
+                    .map(|h| h.split('/').next().unwrap_or("").to_string())
+                {
+                    if !hostname.is_empty()
+                        && !hostname.starts_with("127.")
+                        && !hostname.starts_with("localhost")
+                    {
+                        let _ = tokio::spawn(secure_dns_watchdog_task(hostname));
+                    }
+                }
+            }
+
             #[cfg(not(any(target_os = "android", target_os = "ios")))]
             {
                 let quit = MenuItem::with_id(app, "quit", "Quit QxChat", true, None::<&str>)?;
 
                 let show = MenuItem::with_id(app, "show", "Open QxChat", true, None::<&str>)?;
-                let check_updates = MenuItem::with_id(
-                    app,
-                    "check_updates",
-                    "Check Updates",
-                    true,
-                    None::<&str>,
-                )?;
+                let check_updates =
+                    MenuItem::with_id(app, "check_updates", "Check Updates", true, None::<&str>)?;
 
                 let menu = Menu::with_items(app, &[&show, &check_updates, &quit])?;
 

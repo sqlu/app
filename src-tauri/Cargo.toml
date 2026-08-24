@@ -25,12 +25,14 @@ tauri-plugin-single-instance = "=2.3.4"
 tauri-plugin-updater = "2.10.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+urlencoding = "2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-reqwest = { version = "=0.13.4", default-features = false, features = ["json", "native-tls"] }
+reqwest = { version = "=0.13.4", default-features = false, features = ["json", "native-tls", "socks"] }
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
-reqwest = { version = "=0.13.4", default-features = false, features = ["json", "rustls"] }
+reqwest = { version = "=0.13.4", default-features = false, features = ["json", "rustls", "socks"] }
 
 [target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))'.dependencies]
 webkit2gtk = "2.0.2"

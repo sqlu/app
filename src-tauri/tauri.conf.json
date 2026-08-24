@@ -10,7 +10,7 @@
     "frontendDist": "../client/dist"
   },
   "app": {
-    "withGlobalTauri": true,
+    "withGlobalTauri": false,
     "windows": [
       {
         "label": "main",
@@ -19,12 +19,11 @@
         "height": 800,
         "resizable": true,
         "fullscreen": false,
-        "decorations": false,
-        "devtools": true
+        "decorations": false
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self' https://qxch.at wss://qxch.at; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'self' blob:"
     }
   },
   "plugins": {
